@@ -68,6 +68,10 @@ Added tests for text/tool/text segmentation, immediate tool calls, and stream-en
 
 Added the first WebSocket controller and wired the shell to live state. This commit does not try to solve recovery yet; it only opens the socket, parses frames, feeds ordered messages into the reducer, and sends `USER_MESSAGE` payloads.
 
+### 11. feat(socket): handle ping pong immediately
+
+Heartbeat replies now happen right after a frame parses, before ordered rendering waits for missing sequence numbers. That matters in chaos mode because a `PING` can arrive while earlier messages are still buffered.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.

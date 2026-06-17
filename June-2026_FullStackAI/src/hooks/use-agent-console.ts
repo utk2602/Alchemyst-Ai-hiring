@@ -9,7 +9,7 @@ import {
 } from "@/core/console-state";
 import { OrderedEventProcessor } from "@/core/protocol/ordered-processor";
 import { parseServerMessage } from "@/core/protocol/parse";
-import type { ServerMessage } from "@/core/protocol/types";
+import type { ClientMessage, ServerMessage } from "@/core/protocol/types";
 import { stringifyJson } from "@/core/unsafe-json";
 
 const WS_URL = "ws://localhost:4747/ws";
@@ -30,6 +30,14 @@ export function useAgentConsole(): AgentConsoleController {
   const socketRef = useRef<WebSocket | null>(null);
   const processorRef = useRef(new OrderedEventProcessor());
   const manualCloseRef = useRef(false);
+
+  const sendClientMessage = useCallback((message: ClientMessage, latencyMs?: number): boolean => {
+    const socket = socketRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+    socket.send(stringifyJson(message));
+    dispatch({ type: "CLIENT_EVENT_SENT", message, time: Date.now(), latencyMs });
+    return true;
+  }, []);
 
   const processServerMessage = useCallback((message: ServerMessage) => {
     const result = processorRef.current.ingest(message);
@@ -63,15 +71,19 @@ export function useAgentConsole(): AgentConsoleController {
 
     socket.onmessage = (event: MessageEvent<string>) => {
       const raw = typeof event.data === "string" ? event.data : String(event.data);
+      const receivedAt = Date.now();
       const parsed = parseServerMessage(raw);
       if (!parsed.ok) {
         dispatch({
           type: "SYSTEM_EVENT",
           label: parsed.error,
-          time: Date.now(),
+          time: receivedAt,
           payload: { raw: parsed.raw.slice(0, 400) }
         });
         return;
+      }
+      if (parsed.message.type === "PING") {
+        sendClientMessage({ type: "PONG", echo: parsed.message.challenge }, Date.now() - receivedAt);
       }
       processServerMessage(parsed.message);
     };
@@ -92,7 +104,7 @@ export function useAgentConsole(): AgentConsoleController {
         });
       }
     };
-  }, [processServerMessage]);
+  }, [processServerMessage, sendClientMessage]);
 
   useEffect(() => {
     connect();
@@ -116,8 +128,8 @@ export function useAgentConsole(): AgentConsoleController {
     const snapshot = processorRef.current.reset();
     dispatch({ type: "PROCESSOR_SNAPSHOT", snapshot });
     dispatch({ type: "USER_MESSAGE_SENT", content: trimmed, time: Date.now() });
-    socket.send(stringifyJson({ type: "USER_MESSAGE", content: trimmed }));
-  }, []);
+    sendClientMessage({ type: "USER_MESSAGE", content: trimmed });
+  }, [sendClientMessage]);
 
   const fetchSubmissionLog = useCallback(async () => {
     dispatch({ type: "SUBMISSION_LOG_LOADED", entries: [] satisfies SubmissionLogEntry[] });

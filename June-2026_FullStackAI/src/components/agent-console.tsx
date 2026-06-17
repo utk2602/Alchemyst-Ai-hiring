@@ -35,7 +35,10 @@ export function AgentConsole() {
           <Metric label="state" value={state.protocol.connection} />
           <Metric label="last seq" value={String(state.protocol.lastSeq)} />
           <Metric label="buffer" value={String(state.protocol.bufferedEvents)} />
-          <Metric label="ack" value="-" />
+          <Metric
+            label="pong"
+            value={state.protocol.latestPongLatencyMs === null ? "-" : `${state.protocol.latestPongLatencyMs}ms`}
+          />
         </div>
       </header>
 
