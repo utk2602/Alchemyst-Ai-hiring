@@ -145,6 +145,11 @@ Added a replay scrubber that reconstructs the chat view from recorded events, pl
 Added a `/log` reader that summarizes whether the backend observed correct `PONG`, `TOOL_ACK`, and `RESUME` messages. This gives protocol compliance the same visibility as the chat transcript.
 The build also refreshed Next's generated type bootstrap file, so that change is kept with the UI work instead of leaving generated drift in the tree.
 
+### 30. docs: finalize submission package
+
+Replaced the assignment brief with a submission README, runbook, state machine diagram, demo prompts, screenshot slots, and verification notes. Completed this decision log with the scaling tradeoffs I would expect to discuss in a follow-up interview.
+Next 16 also rewrites `next-env.d.ts` to the active route type directory: `.next/types` during build and `.next/dev/types` while the dev server is running, so that generated file may flip when changing modes.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
@@ -167,4 +172,10 @@ The server replays already-sent history after `RESUME`. Its source notes that a 
 
 ## Scaling Notes
 
-To be completed in the final documentation pass.
+For 50 concurrent agent streams, I would split the current single-session reducer into stream-keyed stores and give each stream its own ordered processor, committed sequence cursor, ACK registry, and trace partition. The screen should render an operations dashboard over those stores rather than one giant reducer tree: active streams get live panels, quiet streams collapse into health rows, and detailed traces mount only when selected. I would also move more derived data into memoized selectors or an external store so one busy stream does not force every visible panel to reconcile.
+
+For responses that are 100x longer, I would stop treating a streamed answer as a few React string segments. Tokens should land in chunked text blocks, a rope-like piece table, or another append-friendly model that supports virtualization and copy/export without building one enormous DOM node. The trace already groups token bursts; the transcript should use the same idea and only materialize the visible slices of long generated documents.
+
+For 500KB+ contexts across many streams, the worker boundary should become a small worker pool with cancellation. If a newer snapshot arrives while an old diff is still running, the old job should be dropped or deprioritized, and the UI should show the latest committed snapshot with diff status instead of blocking on perfect history.
+
+The main protocol failure mode I would keep watching is the `TOOL_ACK` race: the backend has a timeout, while the frontend deliberately waits until the tool card is committed before acknowledging. That is the right semantic choice for this assignment, but in production I would want either a protocol-level `TOOL_RENDER_PENDING` message or server-side tolerance that distinguishes "client saw it" from "client rendered it."
