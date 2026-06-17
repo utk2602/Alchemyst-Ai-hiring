@@ -234,10 +234,10 @@ body {
   padding: 16px;
 }
 
-.turn-preview {
+.turn {
   display: grid;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
 .user-bubble {
@@ -258,6 +258,83 @@ body {
   border-radius: 999px;
   color: var(--muted);
   background: #fbfcf8;
+  font-size: 12px;
+}
+
+.agent-stream {
+  display: grid;
+  gap: 8px;
+  align-items: start;
+}
+
+.text-segment {
+  width: 100%;
+  color: var(--ink);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.tool-card {
+  width: min(760px, 100%);
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  border-left: 4px solid var(--violet);
+  border-radius: 8px;
+  background: #f9fbf6;
+}
+
+.tool-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tool-card-header span {
+  font-weight: 700;
+}
+
+.tool-card-header strong {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: var(--amber);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.tool-card pre {
+  max-height: 120px;
+  overflow: auto;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+.error-segment {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  color: var(--red);
+  border-radius: 8px;
+  background: var(--red-soft);
+}
+
+.stream-end {
+  width: max-content;
+  max-width: 100%;
+  padding: 5px 9px;
+  color: var(--green);
+  border-radius: 999px;
+  background: var(--green-soft);
   font-size: 12px;
 }
 

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useAgentConsole } from "@/hooks/use-agent-console";
+import type { ChatSegment } from "@/core/console-state";
+import { shortJson } from "@/core/format";
 
 const PROMPTS = [
   "hello",
@@ -63,9 +65,17 @@ export function AgentConsole() {
               </div>
             ) : (
               state.turns.map((turn) => (
-                <article key={turn.id} className="turn-preview">
+                <article key={turn.id} className="turn">
                   <div className="user-bubble">{turn.userText}</div>
-                  <div className="segment-count">{turn.segments.length} rendered protocol segments</div>
+                  <div className="agent-stream">
+                    {turn.segments.length === 0 ? (
+                      <div className="segment-count">waiting for ordered protocol events</div>
+                    ) : (
+                      turn.segments.map((segment) => (
+                        <ChatSegmentView key={segment.id} segment={segment} />
+                      ))
+                    )}
+                  </div>
                 </article>
               ))
             )}
@@ -121,6 +131,39 @@ export function AgentConsole() {
       </section>
     </main>
   );
+}
+
+function ChatSegmentView({ segment }: Readonly<{ segment: ChatSegment }>) {
+  if (segment.kind === "text") {
+    return (
+      <div className="text-segment">
+        <span>{segment.text}</span>
+      </div>
+    );
+  }
+
+  if (segment.kind === "tool") {
+    return (
+      <div className="tool-card">
+        <div className="tool-card-header">
+          <span>{segment.toolName}</span>
+          <strong>{segment.state}</strong>
+        </div>
+        <pre>{shortJson(segment.args, 700)}</pre>
+      </div>
+    );
+  }
+
+  if (segment.kind === "error") {
+    return (
+      <div className="error-segment">
+        <strong>{segment.code}</strong>
+        <span>{segment.message}</span>
+      </div>
+    );
+  }
+
+  return <div className="stream-end">stream ended at seq {segment.seq}</div>;
 }
 
 function Metric({ label, value }: Readonly<{ label: string; value: string }>) {

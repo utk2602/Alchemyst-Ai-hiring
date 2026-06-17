@@ -84,6 +84,10 @@ Moved resume tracking to a committed sequence ref that is updated after React ac
 
 Added one-shot `TOOL_ACK` sending from an effect that runs after tool cards are present in state. This makes the acknowledgement closer to rendered reality than sending inside the WebSocket message callback.
 
+### 15. feat(chat): render stable streaming segments
+
+Replaced the segment counter with actual text, tool, error, and stream-end segment rendering. Each interruption creates a new segment rather than rewriting one large answer string, which is the basis for avoiding flicker and duplicate text.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
