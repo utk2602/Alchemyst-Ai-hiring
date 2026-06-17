@@ -52,6 +52,10 @@ Added runtime parsing from raw strings to typed server messages. The important d
 
 Added the ordered processor around a `Map` buffer and a processed sequence set. A `Map` keeps out-of-order messages addressable by `seq`, while the set makes duplicate handling cheap and explicit.
 
+### 7. test(protocol): cover seq ordering edge cases
+
+Added focused tests for the ordering buffer before connecting it to React. The tests intentionally describe DOM-consumption semantics: a future message may be received, but it does not advance `lastProcessedSeq`.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
