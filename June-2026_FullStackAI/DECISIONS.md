@@ -72,6 +72,10 @@ Added the first WebSocket controller and wired the shell to live state. This com
 
 Heartbeat replies now happen right after a frame parses, before ordered rendering waits for missing sequence numbers. That matters in chaos mode because a `PING` can arrive while earlier messages are still buffered.
 
+### 12. feat(socket): add reconnect and resume
+
+Added capped exponential reconnect attempts and send `RESUME` immediately when a replacement socket opens. The client does not clear chat state on close; reconnect is treated as a transport repair, not a new conversation.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
@@ -82,7 +86,7 @@ To be completed when rendered tool acknowledgements land.
 
 ## Reconnection Recovery Rationale
 
-To be completed when reconnect/resume lands.
+Reconnect uses a capped backoff of 500ms through 10s. On open, the first protocol message is `RESUME` with the latest processed sequence number the UI knows about, so the server can replay anything after that point.
 
 ## UI And Layout Stability Rationale
 

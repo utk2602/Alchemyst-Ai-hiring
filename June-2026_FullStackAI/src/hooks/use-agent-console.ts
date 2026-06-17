@@ -13,6 +13,7 @@ import type { ClientMessage, ServerMessage } from "@/core/protocol/types";
 import { stringifyJson } from "@/core/unsafe-json";
 
 const WS_URL = "ws://localhost:4747/ws";
+const RECONNECT_DELAYS_MS = [500, 1000, 2000, 4000, 8000, 10000] as const;
 
 export interface AgentConsoleController {
   readonly state: ConsoleState;
@@ -27,9 +28,16 @@ export interface AgentConsoleController {
 
 export function useAgentConsole(): AgentConsoleController {
   const [state, dispatch] = useReducer(consoleReducer, undefined, createInitialState);
+  const stateRef = useRef(state);
   const socketRef = useRef<WebSocket | null>(null);
   const processorRef = useRef(new OrderedEventProcessor());
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectDelayIndexRef = useRef(0);
   const manualCloseRef = useRef(false);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const sendClientMessage = useCallback((message: ClientMessage, latencyMs?: number): boolean => {
     const socket = socketRef.current;
@@ -58,15 +66,26 @@ export function useAgentConsole(): AgentConsoleController {
     }
   }, []);
 
-  const connect = useCallback(() => {
-    dispatch({ type: "SOCKET_CONNECTING", reconnecting: false, time: Date.now() });
+  const connect = useCallback((reconnecting: boolean) => {
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
+    }
+
+    dispatch({ type: "SOCKET_CONNECTING", reconnecting, time: Date.now() });
     manualCloseRef.current = false;
 
     const socket = new WebSocket(WS_URL);
     socketRef.current = socket;
 
     socket.onopen = () => {
+      reconnectDelayIndexRef.current = 0;
       dispatch({ type: "SOCKET_CONNECTED", time: Date.now() });
+      const lastSeq = stateRef.current.protocol.lastSeq;
+      if (lastSeq > 0) {
+        dispatch({ type: "SOCKET_RESUMING" });
+        sendClientMessage({ type: "RESUME", last_seq: lastSeq });
+      }
     };
 
     socket.onmessage = (event: MessageEvent<string>) => {
@@ -102,14 +121,23 @@ export function useAgentConsole(): AgentConsoleController {
           reason: event.reason || `code ${event.code || "unknown"}`,
           time: Date.now()
         });
+        const delay =
+          RECONNECT_DELAYS_MS[
+            Math.min(reconnectDelayIndexRef.current, RECONNECT_DELAYS_MS.length - 1)
+          ];
+        reconnectDelayIndexRef.current += 1;
+        reconnectTimerRef.current = setTimeout(() => connect(true), delay);
       }
     };
   }, [processServerMessage, sendClientMessage]);
 
   useEffect(() => {
-    connect();
+    connect(false);
     return () => {
       manualCloseRef.current = true;
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
       socketRef.current?.close(1000, "app_unmount");
       socketRef.current = null;
     };
