@@ -116,6 +116,10 @@ Added a small local virtual list instead of pulling in a large UI dependency. Th
 
 Replaced the placeholder diff with a nested JSON diff that reports added, removed, and changed paths. It includes a truncation limit because a 500KB schema can produce more changes than the UI should render at once.
 
+### 23. test(context): cover diff behavior
+
+Added tests for nested object changes, array additions, unchanged objects, and truncation. These cases cover the shapes the provided server emits: report metadata, extracted metrics, and oversized schema snapshots.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
