@@ -20,6 +20,7 @@ export interface TraceRow {
   readonly text?: string;
   readonly payload?: unknown;
   readonly searchable: string;
+  readonly chatElementId?: string;
 }
 
 export function buildTraceRows(events: readonly FlightEvent[]): TraceRow[] {
@@ -55,7 +56,8 @@ export function buildTraceRows(events: readonly FlightEvent[]): TraceRow[] {
       seqEnd: tokenGroup.seqEnd,
       tokenCount: count,
       text: tokenGroup.text,
-      searchable: `token ${tokenGroup.text}`.toLowerCase()
+      searchable: `token ${tokenGroup.text}`.toLowerCase(),
+      chatElementId: `text-${tokenGroup.streamId}-${tokenGroup.seqStart}`
     });
     tokenGroup = null;
   };
@@ -100,12 +102,28 @@ export function buildTraceRows(events: readonly FlightEvent[]): TraceRow[] {
       seqStart: event.seq,
       seqEnd: event.seq,
       payload: event.payload,
-      searchable: event.searchable
+      searchable: event.searchable,
+      chatElementId: chatElementIdFor(event)
     });
   }
 
   flushTokenGroup();
   return rows;
+}
+
+function chatElementIdFor(event: FlightEvent): string | undefined {
+  if (event.direction !== "server") return undefined;
+  if (typeof event.payload !== "object" || event.payload === null || Array.isArray(event.payload)) {
+    return undefined;
+  }
+  const record = event.payload as Record<string, unknown>;
+  if ((event.type === "TOOL_CALL" || event.type === "TOOL_RESULT") && typeof record.call_id === "string") {
+    return `tool-${record.call_id}`;
+  }
+  if (event.type === "CONTEXT_SNAPSHOT" && typeof record.context_id === "string") {
+    return `context-${record.context_id}`;
+  }
+  return undefined;
 }
 
 function asToken(payload: unknown): TokenMessage | null {

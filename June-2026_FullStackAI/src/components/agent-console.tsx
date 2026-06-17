@@ -16,9 +16,30 @@ const PROMPTS = [
 ] as const;
 
 export function AgentConsole() {
-  const { state, sendUserMessage } = useAgentConsole();
+  const { state, sendUserMessage, selectChatElement, selectTrace } = useAgentConsole();
   const [input, setInput] = useState("");
   const traceRows = useMemo(() => buildTraceRows(state.flightEvents), [state.flightEvents]);
+
+  const traceForSegment = (segment: ChatSegment): string | null => {
+    const direct = traceRows.find((row) => row.chatElementId === segment.id);
+    if (direct) return direct.id;
+    if (segment.kind === "tool") {
+      return traceRows.find((row) => row.relatedId === segment.callId)?.id ?? null;
+    }
+    if (segment.kind === "text") {
+      return (
+        traceRows.find(
+          (row) =>
+            row.relatedId === segment.streamId &&
+            typeof row.seqStart === "number" &&
+            typeof row.seqEnd === "number" &&
+            row.seqStart <= segment.firstSeq &&
+            row.seqEnd >= segment.firstSeq
+        )?.id ?? null
+      );
+    }
+    return null;
+  };
 
   const submit = () => {
     sendUserMessage(input);
@@ -74,7 +95,12 @@ export function AgentConsole() {
                       <div className="segment-count">waiting for ordered protocol events</div>
                     ) : (
                       turn.segments.map((segment) => (
-                        <ChatSegmentView key={segment.id} segment={segment} />
+                        <ChatSegmentView
+                          key={segment.id}
+                          segment={segment}
+                          selected={state.selectedChatElementId === segment.id}
+                          onSelect={() => selectChatElement(segment.id, traceForSegment(segment))}
+                        />
                       ))
                     )}
                     <IntegrityBadges stats={Object.values(turn.streamStats)} />
@@ -104,7 +130,11 @@ export function AgentConsole() {
         <aside className="side-stack">
           <section className="panel">
             <PanelHeading title="Trace Timeline" detail={`${traceRows.length} timeline rows.`} />
-            <TraceRowList rows={traceRows.slice(-8)} />
+            <TraceRowList
+              rows={traceRows.slice(-8)}
+              selectedId={state.selectedTraceId}
+              onSelect={(row) => selectTrace(row.id, row.chatElementId ?? null)}
+            />
           </section>
           <section className="panel">
             <PanelHeading title="Context Inspector" detail={`${Object.keys(state.contexts).length} context streams.`} />
@@ -128,7 +158,11 @@ export function AgentConsole() {
   );
 }
 
-function TraceRowList({ rows }: Readonly<{ rows: readonly TraceRow[] }>) {
+function TraceRowList({
+  rows,
+  selectedId,
+  onSelect
+}: Readonly<{ rows: readonly TraceRow[]; selectedId: string | null; onSelect: (row: TraceRow) => void }>) {
   if (rows.length === 0) {
     return (
       <div className="empty-panel">
@@ -141,8 +175,8 @@ function TraceRowList({ rows }: Readonly<{ rows: readonly TraceRow[] }>) {
   return (
     <div className="event-list">
       {rows.map((row) => (
-        <details key={row.id} className="event-row">
-          <summary>
+        <details key={row.id} className={`event-row ${selectedId === row.id ? "selected" : ""}`}>
+          <summary onClick={() => onSelect(row)}>
             <span className={`direction-pill ${row.direction}`}>{row.direction}</span>
             <strong>{row.type}</strong>
             <time>{formatTime(row.startTime)}</time>
@@ -174,18 +208,22 @@ function IntegrityBadges({ stats }: Readonly<{ stats: readonly StreamIntegrity[]
   );
 }
 
-function ChatSegmentView({ segment }: Readonly<{ segment: ChatSegment }>) {
+function ChatSegmentView({
+  segment,
+  selected,
+  onSelect
+}: Readonly<{ segment: ChatSegment; selected: boolean; onSelect: () => void }>) {
   if (segment.kind === "text") {
     return (
-      <div className="text-segment">
+      <button className={`text-segment ${selected ? "selected" : ""}`} onClick={onSelect}>
         <span>{segment.text}</span>
-      </div>
+      </button>
     );
   }
 
   if (segment.kind === "tool") {
     return (
-      <div className="tool-card">
+      <button className={`tool-card ${selected ? "selected" : ""}`} onClick={onSelect}>
         <div className="tool-card-header">
           <div>
             <span>{segment.toolName}</span>
@@ -208,7 +246,7 @@ function ChatSegmentView({ segment }: Readonly<{ segment: ChatSegment }>) {
           <span>{segment.resultSeq ? `result seq ${segment.resultSeq}` : "waiting for result"}</span>
           <span>{segment.ackStatus === "sent" ? "ack sent" : "ack pending"}</span>
         </div>
-      </div>
+      </button>
     );
   }
 
