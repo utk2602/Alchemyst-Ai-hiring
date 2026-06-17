@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAgentConsole } from "@/hooks/use-agent-console";
-import type { ChatSegment, FlightEvent, StreamIntegrity } from "@/core/console-state";
+import type { ChatSegment, StreamIntegrity } from "@/core/console-state";
 import { formatTime, shortJson } from "@/core/format";
+import { buildTraceRows, type TraceRow } from "@/core/trace";
 
 const PROMPTS = [
   "hello",
@@ -17,6 +18,7 @@ const PROMPTS = [
 export function AgentConsole() {
   const { state, sendUserMessage } = useAgentConsole();
   const [input, setInput] = useState("");
+  const traceRows = useMemo(() => buildTraceRows(state.flightEvents), [state.flightEvents]);
 
   const submit = () => {
     sendUserMessage(input);
@@ -101,8 +103,8 @@ export function AgentConsole() {
 
         <aside className="side-stack">
           <section className="panel">
-            <PanelHeading title="Trace Timeline" detail={`${state.flightEvents.length} recorded events.`} />
-            <FlightEventList events={state.flightEvents.slice(-8)} />
+            <PanelHeading title="Trace Timeline" detail={`${traceRows.length} timeline rows.`} />
+            <TraceRowList rows={traceRows.slice(-8)} />
           </section>
           <section className="panel">
             <PanelHeading title="Context Inspector" detail={`${Object.keys(state.contexts).length} context streams.`} />
@@ -126,8 +128,8 @@ export function AgentConsole() {
   );
 }
 
-function FlightEventList({ events }: Readonly<{ events: readonly FlightEvent[] }>) {
-  if (events.length === 0) {
+function TraceRowList({ rows }: Readonly<{ rows: readonly TraceRow[] }>) {
+  if (rows.length === 0) {
     return (
       <div className="empty-panel">
         <strong>No protocol events yet.</strong>
@@ -138,15 +140,15 @@ function FlightEventList({ events }: Readonly<{ events: readonly FlightEvent[] }
 
   return (
     <div className="event-list">
-      {events.map((event) => (
-        <details key={event.id} className="event-row">
+      {rows.map((row) => (
+        <details key={row.id} className="event-row">
           <summary>
-            <span className={`direction-pill ${event.direction}`}>{event.direction}</span>
-            <strong>{event.type}</strong>
-            <time>{formatTime(event.time)}</time>
-            <em>{event.label}</em>
+            <span className={`direction-pill ${row.direction}`}>{row.direction}</span>
+            <strong>{row.type}</strong>
+            <time>{formatTime(row.startTime)}</time>
+            <em>{row.label}</em>
           </summary>
-          <pre>{shortJson(event.payload, 900)}</pre>
+          <pre>{row.kind === "token_group" ? row.text : shortJson(row.payload, 900)}</pre>
         </details>
       ))}
     </div>

@@ -100,6 +100,10 @@ Added compact per-stream integrity badges below the rendered answer. They expose
 
 Turned the raw event list into a small flight recorder with timestamps, direction labels, and payload previews. The goal is to make protocol behavior inspectable without opening DevTools.
 
+### 19. feat(trace): group token timeline rows
+
+Added a derived trace-row model that groups consecutive token events by stream. This prevents token floods from drowning out higher-signal events like tool calls, context snapshots, client replies, and reconnects.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
