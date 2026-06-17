@@ -128,6 +128,10 @@ Context diffs now run in a Web Worker so the large schema script does not block 
 
 Added a lazy JSON tree backed by the same virtual-list primitive as the timeline. Nodes expand on demand and diff paths get visual highlighting, which keeps large schema snapshots inspectable without turning the page into a giant DOM tree.
 
+### 26. feat(context): add snapshot history scrubber
+
+Added a scrubber for each context stream so reviewers can step through snapshots and inspect the diff at each point. This makes context changes a first-class timeline instead of only showing the latest payload.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.

@@ -18,7 +18,7 @@ const PROMPTS = [
 ] as const;
 
 export function AgentConsole() {
-  const { state, sendUserMessage, selectChatElement, selectTrace } = useAgentConsole();
+  const { state, sendUserMessage, selectChatElement, selectTrace, selectContextSnapshot } = useAgentConsole();
   const [input, setInput] = useState("");
   const traceRows = useMemo(() => buildTraceRows(state.flightEvents), [state.flightEvents]);
 
@@ -139,7 +139,7 @@ export function AgentConsole() {
             />
           </section>
           <section className="panel">
-            <ContextInspector contexts={state.contexts} />
+            <ContextInspector contexts={state.contexts} onSelectSnapshot={selectContextSnapshot} />
           </section>
         </aside>
       </section>
@@ -159,7 +159,10 @@ export function AgentConsole() {
   );
 }
 
-function ContextInspector({ contexts }: Readonly<{ contexts: ConsoleState["contexts"] }>) {
+function ContextInspector({
+  contexts,
+  onSelectSnapshot
+}: Readonly<{ contexts: ConsoleState["contexts"]; onSelectSnapshot: (contextId: string, index: number) => void }>) {
   const histories = Object.values(contexts);
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = histories.find((history) => history.contextId === (activeId ?? histories[0]?.contextId));
@@ -186,19 +189,37 @@ function ContextInspector({ contexts }: Readonly<{ contexts: ConsoleState["conte
               </button>
             ))}
           </div>
-          {active && snapshot ? <ContextHistoryView history={active} /> : null}
+          {active && snapshot ? (
+            <ContextHistoryView history={active} onSelectSnapshot={onSelectSnapshot} />
+          ) : null}
         </>
       )}
     </>
   );
 }
 
-function ContextHistoryView({ history }: Readonly<{ history: ContextHistory }>) {
+function ContextHistoryView({
+  history,
+  onSelectSnapshot
+}: Readonly<{ history: ContextHistory; onSelectSnapshot: (contextId: string, index: number) => void }>) {
   const snapshot = history.snapshots[history.selectedIndex];
   if (!snapshot) return null;
 
   return (
     <div className="context-view">
+      <div className="scrubber">
+        <input
+          type="range"
+          min={0}
+          max={Math.max(0, history.snapshots.length - 1)}
+          value={history.selectedIndex}
+          onChange={(event) => onSelectSnapshot(history.contextId, Number(event.target.value))}
+          disabled={history.snapshots.length <= 1}
+        />
+        <span>
+          {history.selectedIndex + 1}/{history.snapshots.length}
+        </span>
+      </div>
       <div className="context-meta">
         <span>
           snapshot {history.selectedIndex + 1}/{history.snapshots.length}

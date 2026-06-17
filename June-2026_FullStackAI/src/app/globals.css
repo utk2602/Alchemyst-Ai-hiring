@@ -577,6 +577,20 @@ body {
   padding: 12px 14px;
 }
 
+.scrubber {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.scrubber input {
+  width: 100%;
+}
+
 .context-meta {
   display: flex;
   flex-wrap: wrap;
