@@ -32,6 +32,7 @@ export interface AgentConsoleController {
   readonly selectChatElement: (id: string | null, traceId?: string | null) => void;
   readonly selectContextSnapshot: (contextId: string, index: number) => void;
   readonly markDemoItem: (id: ConsoleState["demoItems"][number]["id"]) => void;
+  readonly exportDemoSummary: () => void;
   readonly setReplay: (enabled: boolean, index?: number) => void;
   readonly fetchSubmissionLog: () => Promise<void>;
 }
@@ -267,6 +268,29 @@ export function useAgentConsole(): AgentConsoleController {
     dispatch({ type: "MARK_DEMO_ITEM", id, time: Date.now(), source: "manual" });
   }, []);
 
+  const exportDemoSummary = useCallback(() => {
+    const summary = {
+      exported_at: new Date().toISOString(),
+      protocol: stateRef.current.protocol,
+      checklist: stateRef.current.demoItems,
+      events: stateRef.current.flightEvents.map((event) => ({
+        time: new Date(event.time).toISOString(),
+        direction: event.direction,
+        type: event.type,
+        seq: event.seq,
+        label: event.label,
+        related_id: event.relatedId
+      }))
+    };
+    const blob = new Blob([JSON.stringify(summary, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "alchemyst-chaos-demo-summary.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
   const setReplay = useCallback((enabled: boolean, index?: number) => {
     dispatch({ type: "SET_REPLAY", enabled, index });
   }, []);
@@ -278,6 +302,7 @@ export function useAgentConsole(): AgentConsoleController {
     selectChatElement,
     selectContextSnapshot,
     markDemoItem,
+    exportDemoSummary,
     setReplay,
     fetchSubmissionLog
   };

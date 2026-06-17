@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { useAgentConsole } from "@/hooks/use-agent-console";
-import type { ChatSegment, ConsoleState, ContextHistory, StreamIntegrity } from "@/core/console-state";
+import type { ChatSegment, ConsoleState, ContextHistory, DemoItem, FlightEvent, StreamIntegrity } from "@/core/console-state";
 import { formatBytes, formatTime, shortJson } from "@/core/format";
+import { buildReplaySnapshot, getReplayEvents } from "@/core/replay";
 import { buildTraceRows, type TraceRow } from "@/core/trace";
 import { JsonTree } from "./json-tree";
 import { VirtualList } from "./virtual-list";
@@ -18,9 +19,32 @@ const PROMPTS = [
 ] as const;
 
 export function AgentConsole() {
-  const { state, sendUserMessage, selectChatElement, selectTrace, selectContextSnapshot } = useAgentConsole();
+  const {
+    state,
+    sendUserMessage,
+    selectChatElement,
+    selectTrace,
+    selectContextSnapshot,
+    markDemoItem,
+    exportDemoSummary,
+    setReplay
+  } = useAgentConsole();
   const [input, setInput] = useState("");
-  const traceRows = useMemo(() => buildTraceRows(state.flightEvents), [state.flightEvents]);
+  const replayEvents = getReplayEvents(state);
+  const traceRows = useMemo(() => buildTraceRows(replayEvents), [replayEvents]);
+  const replaySnapshot = useMemo(
+    () =>
+      state.replay.enabled
+        ? buildReplaySnapshot(
+            state.flightEvents,
+            state.replay.index,
+            state.protocol.reconnectAttempts,
+            state.protocol.duplicateCount
+          )
+        : null,
+    [state.flightEvents, state.protocol.duplicateCount, state.protocol.reconnectAttempts, state.replay.enabled, state.replay.index]
+  );
+  const displayTurns = replaySnapshot?.turns ?? state.turns;
 
   const traceForSegment = (segment: ChatSegment): string | null => {
     const direct = traceRows.find((row) => row.chatElementId === segment.id);
@@ -82,13 +106,13 @@ export function AgentConsole() {
             ))}
           </div>
           <div className="chat-preview">
-            {state.turns.length === 0 ? (
+            {displayTurns.length === 0 ? (
               <div className="empty-panel">
                 <strong>Send a prompt to start the agent stream.</strong>
                 <span>The next commits will turn this raw state into the final streaming renderer.</span>
               </div>
             ) : (
-              state.turns.map((turn) => (
+              displayTurns.map((turn) => (
                 <article key={turn.id} className="turn">
                   <div className="user-bubble">{turn.userText}</div>
                   <div className="agent-stream">
@@ -145,16 +169,100 @@ export function AgentConsole() {
 
       <section className="dock-grid">
         <section className="panel dock-panel">
-          <PanelHeading title="Flight Recorder" detail={`${state.flightEvents.length} events captured.`} />
+          <FlightRecorder events={state.flightEvents} replay={state.replay} onReplay={setReplay} />
         </section>
         <section className="panel dock-panel">
-          <PanelHeading title="Chaos Checklist" detail="Scenario tracking lands after protocol recovery." />
+          <ChaosChecklist items={state.demoItems} onMark={markDemoItem} onExport={exportDemoSummary} />
         </section>
         <section className="panel dock-panel">
           <PanelHeading title="Submission Readiness" detail="Backend /log check lands near the end." />
         </section>
       </section>
     </main>
+  );
+}
+
+function FlightRecorder({
+  events,
+  replay,
+  onReplay
+}: Readonly<{
+  events: readonly FlightEvent[];
+  replay: ConsoleState["replay"];
+  onReplay: (enabled: boolean, index?: number) => void;
+}>) {
+  const selected = events[Math.min(replay.index, Math.max(0, events.length - 1))];
+  return (
+    <>
+      <div className="dock-heading">
+        <div>
+          <h2>Flight Recorder</h2>
+          <p>{events.length} events captured.</p>
+        </div>
+        <button onClick={() => onReplay(!replay.enabled, replay.index)}>
+          {replay.enabled ? "Live" : "Replay"}
+        </button>
+      </div>
+      <div className="recorder-body">
+        <input
+          type="range"
+          min={0}
+          max={Math.max(0, events.length - 1)}
+          value={Math.min(replay.index, Math.max(0, events.length - 1))}
+          onChange={(event) => onReplay(true, Number(event.target.value))}
+          disabled={events.length === 0}
+        />
+        <div className="recorder-event">
+          {selected ? (
+            <>
+              <strong>{selected.label}</strong>
+              <span>
+                {formatTime(selected.time)} | {selected.direction} | {selected.type}
+              </span>
+              <pre>{shortJson(selected.payload, 600)}</pre>
+            </>
+          ) : (
+            <span>No events recorded.</span>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ChaosChecklist({
+  items,
+  onMark,
+  onExport
+}: Readonly<{
+  items: readonly DemoItem[];
+  onMark: (id: DemoItem["id"]) => void;
+  onExport: () => void;
+}>) {
+  return (
+    <>
+      <div className="dock-heading">
+        <div>
+          <h2>Chaos Checklist</h2>
+          <p>Recording proof points.</p>
+        </div>
+        <button onClick={onExport}>Export JSON</button>
+      </div>
+      <div className="checklist">
+        {items.map((item) => (
+          <div key={item.id} className={`check-item ${item.completedAt ? "done" : ""}`}>
+            <span className="check-box">{item.completedAt ? "OK" : ""}</span>
+            <div>
+              <strong>{item.label}</strong>
+              <span>{item.completedAt ? `${formatTime(item.completedAt)} | ${item.source}` : "waiting"}</span>
+            </div>
+            <button onClick={() => onMark(item.id)} disabled={item.completedAt !== null}>
+              Mark
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

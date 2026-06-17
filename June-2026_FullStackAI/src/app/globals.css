@@ -181,6 +181,42 @@ body {
   border-bottom: 1px solid var(--line);
 }
 
+.dock-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dock-heading h2,
+.dock-heading p {
+  margin: 0;
+}
+
+.dock-heading h2 {
+  font-size: 15px;
+}
+
+.dock-heading p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dock-heading button,
+.check-item button {
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #f9fbf6;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+}
+
 .panel-heading h2 {
   font-size: 15px;
   line-height: 1.2;
@@ -703,6 +739,103 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.recorder-body {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.recorder-event {
+  min-height: 96px;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcf8;
+}
+
+.recorder-event strong,
+.recorder-event span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recorder-event span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.recorder-event pre {
+  max-height: 56px;
+  overflow: auto;
+  margin: 0;
+  color: var(--muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+}
+
+.checklist {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.check-item {
+  display: grid;
+  grid-template-columns: 28px 1fr 58px;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.check-item.done {
+  border-color: color-mix(in srgb, var(--green) 32%, var(--line));
+  background: var(--green-soft);
+}
+
+.check-box {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #f4f6f1;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.check-item strong,
+.check-item span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.check-item strong {
+  font-size: 12px;
+}
+
+.check-item span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.check-item button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .rail-placeholder {
