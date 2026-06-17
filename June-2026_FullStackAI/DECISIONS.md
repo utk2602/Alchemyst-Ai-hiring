@@ -88,6 +88,10 @@ Added one-shot `TOOL_ACK` sending from an effect that runs after tool cards are 
 
 Replaced the segment counter with actual text, tool, error, and stream-end segment rendering. Each interruption creates a new segment rather than rewriting one large answer string, which is the basis for avoiding flicker and duplicate text.
 
+### 16. feat(chat): polish tool call cards
+
+Expanded tool cards with call IDs, argument/result sections, seq metadata, and ACK state. The card is now useful during debugging instead of being only a visual interruption marker.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.

@@ -292,8 +292,23 @@ body {
   gap: 12px;
 }
 
+.tool-card-header div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
 .tool-card-header span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 700;
+}
+
+.tool-card-header small {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .tool-card-header strong {
@@ -303,6 +318,28 @@ body {
   color: var(--amber);
   font-size: 11px;
   text-transform: uppercase;
+}
+
+.tool-card-header strong.complete {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.tool-json-block {
+  display: grid;
+  gap: 4px;
+}
+
+.tool-json-block label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tool-json-block.result pre {
+  border-color: color-mix(in srgb, var(--green) 34%, var(--line));
 }
 
 .tool-card pre {
@@ -317,6 +354,21 @@ body {
   word-break: break-word;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 12px;
+}
+
+.tool-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tool-meta span {
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
 }
 
 .error-segment {

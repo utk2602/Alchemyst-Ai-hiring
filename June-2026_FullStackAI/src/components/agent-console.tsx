@@ -146,10 +146,27 @@ function ChatSegmentView({ segment }: Readonly<{ segment: ChatSegment }>) {
     return (
       <div className="tool-card">
         <div className="tool-card-header">
-          <span>{segment.toolName}</span>
-          <strong>{segment.state}</strong>
+          <div>
+            <span>{segment.toolName}</span>
+            <small>{segment.callId}</small>
+          </div>
+          <strong className={segment.state}>{segment.state}</strong>
         </div>
-        <pre>{shortJson(segment.args, 700)}</pre>
+        <div className="tool-json-block">
+          <label>args</label>
+          <pre>{shortJson(segment.args, 700)}</pre>
+        </div>
+        {segment.result ? (
+          <div className="tool-json-block result">
+            <label>result</label>
+            <pre>{shortJson(segment.result, 700)}</pre>
+          </div>
+        ) : null}
+        <div className="tool-meta">
+          <span>call seq {segment.callSeq}</span>
+          <span>{segment.resultSeq ? `result seq ${segment.resultSeq}` : "waiting for result"}</span>
+          <span>{segment.ackStatus === "sent" ? "ack sent" : "ack pending"}</span>
+        </div>
       </div>
     );
   }
