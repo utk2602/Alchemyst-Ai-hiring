@@ -60,6 +60,10 @@ Added focused tests for the ordering buffer before connecting it to React. The t
 
 Added the central reducer for turns, stream segments, protocol metrics, flight events, context histories, checklist state, and submission logs. This is deliberately separate from React rendering so protocol behavior can be tested without a browser.
 
+### 9. test(state): cover stream and tool transitions
+
+Added tests for text/tool/text segmentation, immediate tool calls, and stream-end integrity. These tests protect the core UX promise: tool interruptions create stable cards instead of rewriting a single mutable paragraph.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
