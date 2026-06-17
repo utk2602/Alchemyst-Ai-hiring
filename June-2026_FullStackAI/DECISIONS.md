@@ -32,6 +32,10 @@ stateDiagram-v2
 
 Added the minimal Next.js, TypeScript, Vitest, and CSS foundation. The main tradeoff is starting with a plain shell instead of a generated UI kit so the final interface can stay compact and purpose-built for this protocol exercise.
 
+### 2. chore: install audited dependencies
+
+Installed the frontend dependency tree and kept the audit clean at the moderate threshold. The app uses current Next/Vitest packages with explicit transitive overrides where needed so the submission does not start with known package warnings.
+
 ## Ordering And Deduping Rationale
 
 To be completed when the ordered event processor lands.
