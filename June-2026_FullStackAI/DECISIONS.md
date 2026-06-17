@@ -1,0 +1,57 @@
+# Decisions
+
+## Architecture Summary
+
+This project is a Next.js App Router client for the provided `agent-server`.
+The backend is treated as fixed infrastructure; all protocol correctness lives in the frontend.
+
+The app is being built as an observability console rather than a decorative chat UI. The first screen will be the working console: streaming chat, trace timeline, context inspector, protocol health, flight recorder, chaos checklist, and submission readiness.
+
+## WebSocket State Machine
+
+```mermaid
+stateDiagram-v2
+  [*] --> idle
+  idle --> connecting
+  connecting --> connected
+  connected --> streaming: USER_MESSAGE
+  streaming --> tool_call_pending: TOOL_CALL rendered
+  tool_call_pending --> streaming: TOOL_RESULT
+  streaming --> connected: STREAM_END
+  connected --> reconnecting: socket close
+  streaming --> reconnecting: socket close
+  tool_call_pending --> reconnecting: socket close
+  reconnecting --> resuming: socket open
+  resuming --> streaming: replay processed
+  resuming --> connected: no replay
+```
+
+## Running Commit Log
+
+### 1. chore: scaffold strict Next app
+
+Added the minimal Next.js, TypeScript, Vitest, and CSS foundation. The main tradeoff is starting with a plain shell instead of a generated UI kit so the final interface can stay compact and purpose-built for this protocol exercise.
+
+## Ordering And Deduping Rationale
+
+To be completed when the ordered event processor lands.
+
+## Tool ACK Rendering Rationale
+
+To be completed when rendered tool acknowledgements land.
+
+## Reconnection Recovery Rationale
+
+To be completed when reconnect/resume lands.
+
+## UI And Layout Stability Rationale
+
+The UI will favor fixed panel boundaries, stable stream segments, and bounded scroll regions so protocol events do not resize the application under stress.
+
+## Known Backend Limitation
+
+The server replays already-sent history after `RESUME`. Its source notes that a dropped in-progress script is not actually resumed, so the client must preserve state honestly and document what was recovered.
+
+## Scaling Notes
+
+To be completed in the final documentation pass.
