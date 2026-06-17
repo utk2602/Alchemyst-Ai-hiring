@@ -48,9 +48,13 @@ Added local protocol types that mirror the backend contract instead of importing
 
 Added runtime parsing from raw strings to typed server messages. The important decision is that JSON parsing returns `unknown`; protocol guards do the narrowing so malformed frames become traceable system events instead of crashing the UI.
 
+### 6. feat(protocol): add ordered event processor
+
+Added the ordered processor around a `Map` buffer and a processed sequence set. A `Map` keeps out-of-order messages addressable by `seq`, while the set makes duplicate handling cheap and explicit.
+
 ## Ordering And Deduping Rationale
 
-To be completed when the ordered event processor lands.
+Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
 
 ## Tool ACK Rendering Rationale
 
