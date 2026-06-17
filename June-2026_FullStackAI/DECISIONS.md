@@ -124,6 +124,10 @@ Added tests for nested object changes, array additions, unchanged objects, and t
 
 Context diffs now run in a Web Worker so the large schema script does not block token rendering. The worker receives only the previous and current snapshots for a context stream, then reports diff readiness back into the reducer.
 
+### 25. feat(context): build virtualized JSON inspector
+
+Added a lazy JSON tree backed by the same virtual-list primitive as the timeline. Nodes expand on demand and diff paths get visual highlighting, which keeps large schema snapshots inspectable without turning the page into a giant DOM tree.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.

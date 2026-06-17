@@ -548,6 +548,145 @@ body {
   font-size: 11px;
 }
 
+.context-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.context-tabs button {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #f9fbf6;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.context-tabs .active {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.context-view {
+  padding: 12px 14px;
+}
+
+.context-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.context-meta span {
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fbfcf8;
+}
+
+.json-tree {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcf8;
+}
+
+.json-row {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  border-bottom: 1px solid rgba(216, 221, 210, 0.55);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
+.tree-toggle,
+.tree-toggle-spacer {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.tree-toggle {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.json-key {
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.json-separator {
+  color: var(--muted);
+}
+
+.json-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value-string {
+  color: var(--green);
+}
+
+.value-number,
+.value-boolean {
+  color: var(--violet);
+}
+
+.value-null {
+  color: var(--amber);
+}
+
+.value-object {
+  color: var(--muted);
+}
+
+.diff-added {
+  background: var(--green-soft);
+}
+
+.diff-removed {
+  background: var(--red-soft);
+}
+
+.diff-changed {
+  background: var(--amber-soft);
+}
+
+.diff-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.diff-pill {
+  max-width: 100%;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .rail-placeholder {
   height: 280px;
   margin: 16px;

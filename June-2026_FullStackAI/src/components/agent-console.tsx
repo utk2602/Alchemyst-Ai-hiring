@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useAgentConsole } from "@/hooks/use-agent-console";
-import type { ChatSegment, StreamIntegrity } from "@/core/console-state";
-import { formatTime, shortJson } from "@/core/format";
+import type { ChatSegment, ConsoleState, ContextHistory, StreamIntegrity } from "@/core/console-state";
+import { formatBytes, formatTime, shortJson } from "@/core/format";
 import { buildTraceRows, type TraceRow } from "@/core/trace";
+import { JsonTree } from "./json-tree";
 import { VirtualList } from "./virtual-list";
 
 const PROMPTS = [
@@ -138,8 +139,7 @@ export function AgentConsole() {
             />
           </section>
           <section className="panel">
-            <PanelHeading title="Context Inspector" detail={`${Object.keys(state.contexts).length} context streams.`} />
-            <div className="rail-placeholder short" />
+            <ContextInspector contexts={state.contexts} />
           </section>
         </aside>
       </section>
@@ -156,6 +156,68 @@ export function AgentConsole() {
         </section>
       </section>
     </main>
+  );
+}
+
+function ContextInspector({ contexts }: Readonly<{ contexts: ConsoleState["contexts"] }>) {
+  const histories = Object.values(contexts);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const active = histories.find((history) => history.contextId === (activeId ?? histories[0]?.contextId));
+  const snapshot = active?.snapshots[active.selectedIndex];
+
+  return (
+    <>
+      <PanelHeading title="Context Inspector" detail={`${histories.length} context streams.`} />
+      {histories.length === 0 ? (
+        <div className="empty-panel">
+          <strong>No context snapshots yet.</strong>
+          <span>Use the report or schema prompts to populate this panel.</span>
+        </div>
+      ) : (
+        <>
+          <div className="context-tabs">
+            {histories.map((history) => (
+              <button
+                key={history.contextId}
+                className={history.contextId === active?.contextId ? "active" : ""}
+                onClick={() => setActiveId(history.contextId)}
+              >
+                {history.contextId}
+              </button>
+            ))}
+          </div>
+          {active && snapshot ? <ContextHistoryView history={active} /> : null}
+        </>
+      )}
+    </>
+  );
+}
+
+function ContextHistoryView({ history }: Readonly<{ history: ContextHistory }>) {
+  const snapshot = history.snapshots[history.selectedIndex];
+  if (!snapshot) return null;
+
+  return (
+    <div className="context-view">
+      <div className="context-meta">
+        <span>
+          snapshot {history.selectedIndex + 1}/{history.snapshots.length}
+        </span>
+        <span>seq {snapshot.seq}</span>
+        <span>{formatBytes(snapshot.sizeBytes)}</span>
+        <span>{snapshot.diffStatus}</span>
+      </div>
+      <JsonTree data={snapshot.data} diff={snapshot.diff} />
+      {snapshot.diff && snapshot.diff.entries.length > 0 ? (
+        <div className="diff-list">
+          {snapshot.diff.entries.slice(0, 8).map((entry) => (
+            <span key={`${entry.path}-${entry.kind}`} className={`diff-pill diff-${entry.kind}`}>
+              {entry.kind}: {entry.path}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
