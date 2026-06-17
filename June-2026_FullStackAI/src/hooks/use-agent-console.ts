@@ -33,11 +33,16 @@ export function useAgentConsole(): AgentConsoleController {
   const processorRef = useRef(new OrderedEventProcessor());
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectDelayIndexRef = useRef(0);
+  const committedSeqRef = useRef(0);
   const manualCloseRef = useRef(false);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  useEffect(() => {
+    committedSeqRef.current = state.protocol.lastSeq;
+  }, [state.protocol.lastSeq]);
 
   const sendClientMessage = useCallback((message: ClientMessage, latencyMs?: number): boolean => {
     const socket = socketRef.current;
@@ -81,7 +86,7 @@ export function useAgentConsole(): AgentConsoleController {
     socket.onopen = () => {
       reconnectDelayIndexRef.current = 0;
       dispatch({ type: "SOCKET_CONNECTED", time: Date.now() });
-      const lastSeq = stateRef.current.protocol.lastSeq;
+      const lastSeq = committedSeqRef.current;
       if (lastSeq > 0) {
         dispatch({ type: "SOCKET_RESUMING" });
         sendClientMessage({ type: "RESUME", last_seq: lastSeq });
@@ -154,6 +159,7 @@ export function useAgentConsole(): AgentConsoleController {
     }
 
     const snapshot = processorRef.current.reset();
+    committedSeqRef.current = 0;
     dispatch({ type: "PROCESSOR_SNAPSHOT", snapshot });
     dispatch({ type: "USER_MESSAGE_SENT", content: trimmed, time: Date.now() });
     sendClientMessage({ type: "USER_MESSAGE", content: trimmed });

@@ -76,6 +76,10 @@ Heartbeat replies now happen right after a frame parses, before ordered renderin
 
 Added capped exponential reconnect attempts and send `RESUME` immediately when a replacement socket opens. The client does not clear chat state on close; reconnect is treated as a transport repair, not a new conversation.
 
+### 13. feat(socket): separate received and committed seq
+
+Moved resume tracking to a committed sequence ref that is updated after React accepts state. This keeps `RESUME` tied to what the UI has consumed, not just what the socket callback happened to receive.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
@@ -86,7 +90,7 @@ To be completed when rendered tool acknowledgements land.
 
 ## Reconnection Recovery Rationale
 
-Reconnect uses a capped backoff of 500ms through 10s. On open, the first protocol message is `RESUME` with the latest processed sequence number the UI knows about, so the server can replay anything after that point.
+Reconnect uses a capped backoff of 500ms through 10s. On open, the first protocol message is `RESUME` with the latest committed sequence number the UI knows about, so the server can replay anything after that point. Socket receipt, ordered processing, and committed UI state are treated as separate moments.
 
 ## UI And Layout Stability Rationale
 
