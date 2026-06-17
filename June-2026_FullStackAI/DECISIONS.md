@@ -44,6 +44,10 @@ Set the UI direction before wiring behavior: matte workspace, dark command bar, 
 
 Added local protocol types that mirror the backend contract instead of importing from `agent-server`. Keeping the boundary explicit makes it easier to explain what the client trusts and what it validates.
 
+### 5. feat(protocol): validate websocket frames
+
+Added runtime parsing from raw strings to typed server messages. The important decision is that JSON parsing returns `unknown`; protocol guards do the narrowing so malformed frames become traceable system events instead of crashing the UI.
+
 ## Ordering And Deduping Rationale
 
 To be completed when the ordered event processor lands.
