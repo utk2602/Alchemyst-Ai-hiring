@@ -1,9 +1,21 @@
 :root {
   --bg: #f4f6f1;
   --panel: #ffffff;
+  --panel-strong: #181b1f;
   --ink: #17191d;
   --muted: #697179;
   --line: #d8ddd2;
+  --line-strong: #bbc4b4;
+  --green: #1f8a5b;
+  --green-soft: #ddf5e7;
+  --amber: #b66a00;
+  --amber-soft: #fff0cf;
+  --red: #b23535;
+  --red-soft: #fde2df;
+  --blue: #2f62c9;
+  --blue-soft: #e4edff;
+  --violet: #7253bb;
+  --shadow: 0 18px 50px rgba(23, 25, 29, 0.08);
 }
 
 * {
@@ -19,42 +31,203 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.app-shell {
+.console-shell {
   min-height: 100vh;
   display: grid;
-  place-items: center;
-  padding: 24px;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
+  padding: 12px;
 }
 
-.placeholder-panel {
-  width: min(760px, 100%);
-  padding: 28px;
-  border: 1px solid var(--line);
+.command-bar {
+  min-height: 76px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1.2fr) minmax(480px, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  padding: 10px;
+  color: #f7faf4;
+  background: var(--panel-strong);
   border-radius: 8px;
-  background: var(--panel);
+  box-shadow: var(--shadow);
 }
 
-.placeholder-panel h1,
-.placeholder-panel p {
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.status-rail {
+  width: 12px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: var(--green);
+  box-shadow: 0 0 22px rgba(31, 138, 91, 0.7);
+}
+
+.brand-lockup h1,
+.brand-lockup p,
+.panel-heading h2,
+.panel-heading p {
   margin: 0;
 }
 
-.placeholder-panel h1 {
-  margin-top: 8px;
-  font-size: clamp(32px, 5vw, 52px);
-  line-height: 1;
+.brand-lockup h1 {
+  margin-top: 4px;
+  font-size: 20px;
+  line-height: 1.1;
 }
 
-.placeholder-panel p:last-child {
-  margin-top: 16px;
-  color: var(--muted);
-  line-height: 1.6;
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metric-tile {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.metric-tile span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.metric-tile strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
 }
 
 .eyebrow {
-  color: var(--muted);
+  color: color-mix(in srgb, currentColor 62%, transparent);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.workspace-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) minmax(420px, 0.78fr);
+  gap: 12px;
+}
+
+.side-stack {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(380px, 0.95fr) minmax(340px, 1fr);
+  gap: 12px;
+}
+
+.dock-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.main-panel {
+  min-height: 640px;
+}
+
+.dock-panel {
+  min-height: 168px;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-heading h2 {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.panel-heading p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.empty-panel {
+  display: grid;
+  gap: 6px;
+  margin: 16px;
+  padding: 18px;
+  color: var(--muted);
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  background: #fbfcf8;
+}
+
+.empty-panel strong {
+  color: var(--ink);
+}
+
+.rail-placeholder {
+  height: 280px;
+  margin: 16px;
+  border-radius: 8px;
+  background:
+    linear-gradient(#eef2e8 1px, transparent 1px),
+    linear-gradient(90deg, #eef2e8 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.rail-placeholder.short {
+  height: 220px;
+}
+
+@media (max-width: 1180px) {
+  .command-bar,
+  .workspace-grid,
+  .dock-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .side-stack {
+    grid-template-rows: auto auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .console-shell {
+    padding: 8px;
+  }
+
+  .metric-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main-panel {
+    min-height: 540px;
+  }
 }

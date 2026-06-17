@@ -36,6 +36,10 @@ Added the minimal Next.js, TypeScript, Vitest, and CSS foundation. The main trad
 
 Installed the frontend dependency tree and kept the audit clean at the moderate threshold. The app uses current Next/Vitest packages with explicit transitive overrides where needed so the submission does not start with known package warnings.
 
+### 3. style: establish control-room visual system
+
+Set the UI direction before wiring behavior: matte workspace, dark command bar, compact metric tiles, and fixed panel boundaries. This keeps later protocol work honest because streamed content has to fit into stable regions instead of stretching the whole page.
+
 ## Ordering And Deduping Rationale
 
 To be completed when the ordered event processor lands.
@@ -50,7 +54,7 @@ To be completed when reconnect/resume lands.
 
 ## UI And Layout Stability Rationale
 
-The UI will favor fixed panel boundaries, stable stream segments, and bounded scroll regions so protocol events do not resize the application under stress.
+The UI favors fixed panel boundaries, stable stream segments, and bounded scroll regions so protocol events do not resize the application under stress. Color is reserved for state: green for healthy, amber for waiting or reconnecting, red for violations, and blue for active selection.
 
 ## Known Backend Limitation
 
