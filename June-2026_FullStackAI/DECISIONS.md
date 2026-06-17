@@ -40,6 +40,10 @@ Installed the frontend dependency tree and kept the audit clean at the moderate 
 
 Set the UI direction before wiring behavior: matte workspace, dark command bar, compact metric tiles, and fixed panel boundaries. This keeps later protocol work honest because streamed content has to fit into stable regions instead of stretching the whole page.
 
+### 4. feat(protocol): define websocket message contracts
+
+Added local protocol types that mirror the backend contract instead of importing from `agent-server`. Keeping the boundary explicit makes it easier to explain what the client trusts and what it validates.
+
 ## Ordering And Deduping Rationale
 
 To be completed when the ordered event processor lands.
