@@ -4,17 +4,26 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import {
   consoleReducer,
   createInitialState,
+  type ContextSnapshotRecord,
   type ConsoleState,
   type SubmissionLogEntry,
   type ToolSegment
 } from "@/core/console-state";
+import type { JsonDiffResult } from "@/core/json-diff";
 import { OrderedEventProcessor } from "@/core/protocol/ordered-processor";
 import { parseServerMessage } from "@/core/protocol/parse";
-import type { ClientMessage, ServerMessage } from "@/core/protocol/types";
+import type { ClientMessage, ContextSnapshotMessage, ServerMessage } from "@/core/protocol/types";
 import { stringifyJson } from "@/core/unsafe-json";
 
 const WS_URL = "ws://localhost:4747/ws";
 const RECONNECT_DELAYS_MS = [500, 1000, 2000, 4000, 8000, 10000] as const;
+
+interface DiffWorkerResponse {
+  readonly jobId: string;
+  readonly contextId: string;
+  readonly snapshotIndex: number;
+  readonly result: JsonDiffResult;
+}
 
 export interface AgentConsoleController {
   readonly state: ConsoleState;
@@ -36,6 +45,8 @@ export function useAgentConsole(): AgentConsoleController {
   const reconnectDelayIndexRef = useRef(0);
   const committedSeqRef = useRef(0);
   const sentAckIdsRef = useRef(new Set<string>());
+  const diffWorkerRef = useRef<Worker | null>(null);
+  const pendingDiffJobsRef = useRef(new Set<string>());
   const manualCloseRef = useRef(false);
 
   useEffect(() => {
@@ -46,12 +57,61 @@ export function useAgentConsole(): AgentConsoleController {
     committedSeqRef.current = state.protocol.lastSeq;
   }, [state.protocol.lastSeq]);
 
+  useEffect(() => {
+    if (typeof Worker === "undefined") return;
+
+    const worker = new Worker(new URL("../workers/diff.worker.ts", import.meta.url));
+    worker.onmessage = (event: MessageEvent<DiffWorkerResponse>) => {
+      pendingDiffJobsRef.current.delete(event.data.jobId);
+      dispatch({
+        type: "CONTEXT_DIFF_READY",
+        contextId: event.data.contextId,
+        snapshotIndex: event.data.snapshotIndex,
+        diff: event.data.result
+      });
+    };
+    worker.onerror = () => {
+      for (const jobId of pendingDiffJobsRef.current) {
+        const [contextId, indexText] = jobId.split(":");
+        const snapshotIndex = Number(indexText);
+        if (contextId && Number.isFinite(snapshotIndex)) {
+          dispatch({ type: "CONTEXT_DIFF_FAILED", contextId, snapshotIndex });
+        }
+      }
+      pendingDiffJobsRef.current.clear();
+    };
+    diffWorkerRef.current = worker;
+
+    return () => {
+      worker.terminate();
+      diffWorkerRef.current = null;
+      pendingDiffJobsRef.current.clear();
+    };
+  }, []);
+
   const sendClientMessage = useCallback((message: ClientMessage, latencyMs?: number): boolean => {
     const socket = socketRef.current;
     if (!socket || socket.readyState !== WebSocket.OPEN) return false;
     socket.send(stringifyJson(message));
     dispatch({ type: "CLIENT_EVENT_SENT", message, time: Date.now(), latencyMs });
     return true;
+  }, []);
+
+  const scheduleContextDiff = useCallback((message: ContextSnapshotMessage) => {
+    const history = stateRef.current.contexts[message.context_id];
+    const previous: ContextSnapshotRecord | undefined = history?.snapshots[history.snapshots.length - 1];
+    if (!previous || !diffWorkerRef.current) return;
+
+    const snapshotIndex = history.snapshots.length;
+    const jobId = `${message.context_id}:${snapshotIndex}`;
+    pendingDiffJobsRef.current.add(jobId);
+    diffWorkerRef.current.postMessage({
+      jobId,
+      contextId: message.context_id,
+      snapshotIndex,
+      previous: previous.data,
+      current: message.data
+    });
   }, []);
 
   const processServerMessage = useCallback((message: ServerMessage) => {
@@ -69,9 +129,12 @@ export function useAgentConsole(): AgentConsoleController {
     }
 
     for (const readyMessage of result.ready) {
+      if (readyMessage.type === "CONTEXT_SNAPSHOT") {
+        scheduleContextDiff(readyMessage);
+      }
       dispatch({ type: "SERVER_EVENT_PROCESSED", message: readyMessage, time: Date.now() });
     }
-  }, []);
+  }, [scheduleContextDiff]);
 
   const connect = useCallback((reconnecting: boolean) => {
     if (reconnectTimerRef.current) {

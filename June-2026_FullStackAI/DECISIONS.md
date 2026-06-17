@@ -120,6 +120,10 @@ Replaced the placeholder diff with a nested JSON diff that reports added, remove
 
 Added tests for nested object changes, array additions, unchanged objects, and truncation. These cases cover the shapes the provided server emits: report metadata, extracted metrics, and oversized schema snapshots.
 
+### 24. feat(context): move diffing to worker
+
+Context diffs now run in a Web Worker so the large schema script does not block token rendering. The worker receives only the previous and current snapshots for a context stream, then reports diff readiness back into the reducer.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
