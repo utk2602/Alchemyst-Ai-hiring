@@ -27,7 +27,8 @@ export function AgentConsole() {
     selectContextSnapshot,
     markDemoItem,
     exportDemoSummary,
-    setReplay
+    setReplay,
+    fetchSubmissionLog
   } = useAgentConsole();
   const [input, setInput] = useState("");
   const replayEvents = getReplayEvents(state);
@@ -175,11 +176,69 @@ export function AgentConsole() {
           <ChaosChecklist items={state.demoItems} onMark={markDemoItem} onExport={exportDemoSummary} />
         </section>
         <section className="panel dock-panel">
-          <PanelHeading title="Submission Readiness" detail="Backend /log check lands near the end." />
+          <SubmissionReadiness log={state.submissionLog} onFetch={fetchSubmissionLog} />
         </section>
       </section>
     </main>
   );
+}
+
+function SubmissionReadiness({
+  log,
+  onFetch
+}: Readonly<{ log: ConsoleState["submissionLog"]; onFetch: () => void }>) {
+  const summary = summarizeLog(log.entries);
+  return (
+    <>
+      <div className="dock-heading">
+        <div>
+          <h2>Submission Readiness</h2>
+          <p>Backend /log verification.</p>
+        </div>
+        <button onClick={onFetch} disabled={log.loading}>
+          {log.loading ? "Fetching" : "Fetch /log"}
+        </button>
+      </div>
+      {log.error ? <div className="readiness-error">{log.error}</div> : null}
+      <div className="readiness-grid">
+        <ReadinessPill label="PONG" ok={summary.pongOk} />
+        <ReadinessPill label="TOOL_ACK" ok={summary.toolAckOk} />
+        <ReadinessPill label="RESUME" ok={summary.resumeSeen} />
+        <ReadinessPill label="violations" ok={summary.violations === 0} value={String(summary.violations)} />
+      </div>
+      <div className="log-list">
+        {log.entries.slice(-5).map((entry, index) => (
+          <div key={`${entry.timestamp}-${entry.type}-${index}`} className={`log-row ${entry.verdict !== "ok" ? "bad" : ""}`}>
+            <span>{formatTime(entry.timestamp)}</span>
+            <strong>{entry.type}</strong>
+            <em>{entry.verdict ?? "unknown"}</em>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ReadinessPill({
+  label,
+  ok,
+  value
+}: Readonly<{ label: string; ok: boolean; value?: string }>) {
+  return (
+    <div className={`readiness-pill ${ok ? "ok" : "pending"}`}>
+      <span>{label}</span>
+      <strong>{value ?? (ok ? "ok" : "-")}</strong>
+    </div>
+  );
+}
+
+function summarizeLog(entries: ConsoleState["submissionLog"]["entries"]) {
+  return {
+    pongOk: entries.some((entry) => entry.type === "PONG" && entry.verdict === "ok"),
+    toolAckOk: entries.some((entry) => entry.type === "TOOL_ACK" && entry.verdict === "ok"),
+    resumeSeen: entries.some((entry) => entry.type === "RESUME" && entry.verdict === "ok"),
+    violations: entries.filter((entry) => entry.verdict && entry.verdict !== "ok").length
+  };
 }
 
 function FlightRecorder({

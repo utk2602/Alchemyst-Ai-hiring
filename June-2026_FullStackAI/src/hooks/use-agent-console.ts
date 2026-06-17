@@ -16,6 +16,7 @@ import type { ClientMessage, ContextSnapshotMessage, ServerMessage } from "@/cor
 import { stringifyJson } from "@/core/unsafe-json";
 
 const WS_URL = "ws://localhost:4747/ws";
+const LOG_URL = "http://localhost:4747/log";
 const RECONNECT_DELAYS_MS = [500, 1000, 2000, 4000, 8000, 10000] as const;
 
 interface DiffWorkerResponse {
@@ -249,7 +250,23 @@ export function useAgentConsole(): AgentConsoleController {
   }, [sendClientMessage]);
 
   const fetchSubmissionLog = useCallback(async () => {
-    dispatch({ type: "SUBMISSION_LOG_LOADED", entries: [] satisfies SubmissionLogEntry[] });
+    dispatch({ type: "SUBMISSION_LOG_LOADING" });
+    try {
+      const response = await fetch(LOG_URL);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const value = (await response.json()) as unknown;
+      if (!Array.isArray(value)) {
+        throw new Error("Backend log was not an array");
+      }
+      dispatch({ type: "SUBMISSION_LOG_LOADED", entries: normalizeSubmissionLog(value) });
+    } catch (error) {
+      dispatch({
+        type: "SUBMISSION_LOG_ERROR",
+        error: error instanceof Error ? error.message : "Failed to fetch backend log"
+      });
+    }
   }, []);
 
   const selectTrace = useCallback((id: string | null, chatElementId?: string | null) => {
@@ -306,6 +323,21 @@ export function useAgentConsole(): AgentConsoleController {
     setReplay,
     fetchSubmissionLog
   };
+}
+
+function normalizeSubmissionLog(value: unknown[]): SubmissionLogEntry[] {
+  return value.flatMap((entry): SubmissionLogEntry[] => {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) return [];
+    const record = entry as Record<string, unknown>;
+    const timestamp = typeof record.timestamp === "number" ? record.timestamp : Date.now();
+    const type = typeof record.type === "string" ? record.type : "UNKNOWN";
+    const verdict = typeof record.verdict === "string" ? record.verdict : undefined;
+    const data =
+      typeof record.data === "object" && record.data !== null && !Array.isArray(record.data)
+        ? (record.data as Record<string, unknown>)
+        : {};
+    return [{ timestamp, type, verdict, data }];
+  });
 }
 
 function findToolSegment(state: ConsoleState, callId: string): ToolSegment | null {

@@ -140,6 +140,11 @@ Expanded the command bar into a protocol health surface. It now exposes sequence
 
 Added a replay scrubber that reconstructs the chat view from recorded events, plus a chaos checklist with automatic/manual marks and JSON export. This gives the screen recording a visible script and leaves behind a compact run summary.
 
+### 29. feat(obs): add submission readiness panel
+
+Added a `/log` reader that summarizes whether the backend observed correct `PONG`, `TOOL_ACK`, and `RESUME` messages. This gives protocol compliance the same visibility as the chat transcript.
+The build also refreshed Next's generated type bootstrap file, so that change is kept with the UI work instead of leaving generated drift in the tree.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
