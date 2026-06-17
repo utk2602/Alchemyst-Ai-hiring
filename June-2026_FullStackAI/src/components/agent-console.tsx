@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAgentConsole } from "@/hooks/use-agent-console";
-import type { ChatSegment } from "@/core/console-state";
+import type { ChatSegment, StreamIntegrity } from "@/core/console-state";
 import { shortJson } from "@/core/format";
 
 const PROMPTS = [
@@ -75,6 +75,7 @@ export function AgentConsole() {
                         <ChatSegmentView key={segment.id} segment={segment} />
                       ))
                     )}
+                    <IntegrityBadges stats={Object.values(turn.streamStats)} />
                   </div>
                 </article>
               ))
@@ -130,6 +131,25 @@ export function AgentConsole() {
         </section>
       </section>
     </main>
+  );
+}
+
+function IntegrityBadges({ stats }: Readonly<{ stats: readonly StreamIntegrity[] }>) {
+  if (stats.length === 0) return null;
+  return (
+    <div className="integrity-row">
+      {stats.map((stat) => (
+        <div key={stat.streamId} className="integrity-badge">
+          <strong>{stat.streamEndReceived ? "verified" : "open"}</strong>
+          <span>{stat.tokenCount} tokens</span>
+          <span>
+            seq {stat.firstSeq}-{stat.lastSeq}
+          </span>
+          <span>{stat.reconnectsSurvived} reconnects</span>
+          <span>{stat.duplicateCountAtEnd} dupes</span>
+        </div>
+      ))}
+    </div>
   );
 }
 

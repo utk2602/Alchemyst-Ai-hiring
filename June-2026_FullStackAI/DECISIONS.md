@@ -92,6 +92,10 @@ Replaced the segment counter with actual text, tool, error, and stream-end segme
 
 Expanded tool cards with call IDs, argument/result sections, seq metadata, and ACK state. The card is now useful during debugging instead of being only a visual interruption marker.
 
+### 17. feat(chat): add stream integrity badges
+
+Added compact per-stream integrity badges below the rendered answer. They expose the details evaluators care about: token count, sequence range, reconnect count, duplicate handling, and whether `STREAM_END` arrived.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.

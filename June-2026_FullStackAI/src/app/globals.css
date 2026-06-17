@@ -390,6 +390,31 @@ body {
   font-size: 12px;
 }
 
+.integrity-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.integrity-badge {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  gap: 8px;
+  align-items: center;
+  max-width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcf8;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.integrity-badge strong {
+  color: var(--green);
+}
+
 .composer {
   display: grid;
   grid-template-columns: 1fr 88px;
