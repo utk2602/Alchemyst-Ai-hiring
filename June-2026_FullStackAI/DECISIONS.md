@@ -80,13 +80,17 @@ Added capped exponential reconnect attempts and send `RESUME` immediately when a
 
 Moved resume tracking to a committed sequence ref that is updated after React accepts state. This keeps `RESUME` tied to what the UI has consumed, not just what the socket callback happened to receive.
 
+### 14. feat(socket): acknowledge rendered tools
+
+Added one-shot `TOOL_ACK` sending from an effect that runs after tool cards are present in state. This makes the acknowledgement closer to rendered reality than sending inside the WebSocket message callback.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
 
 ## Tool ACK Rendering Rationale
 
-To be completed when rendered tool acknowledgements land.
+The client sends `TOOL_ACK` once the reducer has created the tool segment and React has had a chance to commit the state. ACK IDs are tracked in a set so duplicate `TOOL_CALL` frames or replayed events do not create duplicate acknowledgements.
 
 ## Reconnection Recovery Rationale
 

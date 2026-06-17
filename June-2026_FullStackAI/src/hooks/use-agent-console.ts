@@ -5,7 +5,8 @@ import {
   consoleReducer,
   createInitialState,
   type ConsoleState,
-  type SubmissionLogEntry
+  type SubmissionLogEntry,
+  type ToolSegment
 } from "@/core/console-state";
 import { OrderedEventProcessor } from "@/core/protocol/ordered-processor";
 import { parseServerMessage } from "@/core/protocol/parse";
@@ -34,6 +35,7 @@ export function useAgentConsole(): AgentConsoleController {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectDelayIndexRef = useRef(0);
   const committedSeqRef = useRef(0);
+  const sentAckIdsRef = useRef(new Set<string>());
   const manualCloseRef = useRef(false);
 
   useEffect(() => {
@@ -148,6 +150,22 @@ export function useAgentConsole(): AgentConsoleController {
     };
   }, [connect]);
 
+  useEffect(() => {
+    for (const callId of state.pendingAckCallIds) {
+      if (sentAckIdsRef.current.has(callId)) continue;
+      const tool = findToolSegment(state, callId);
+      if (!tool) continue;
+
+      sentAckIdsRef.current.add(callId);
+      const time = Date.now();
+      const latencyMs = time - tool.createdAt;
+      const sent = sendClientMessage({ type: "TOOL_ACK", call_id: callId }, latencyMs);
+      if (sent) {
+        dispatch({ type: "TOOL_ACK_SENT", callId, time, latencyMs });
+      }
+    }
+  }, [sendClientMessage, state, state.pendingAckCallIds]);
+
   const sendUserMessage = useCallback((content: string) => {
     const trimmed = content.trim();
     if (!trimmed) return;
@@ -160,6 +178,7 @@ export function useAgentConsole(): AgentConsoleController {
 
     const snapshot = processorRef.current.reset();
     committedSeqRef.current = 0;
+    sentAckIdsRef.current.clear();
     dispatch({ type: "PROCESSOR_SNAPSHOT", snapshot });
     dispatch({ type: "USER_MESSAGE_SENT", content: trimmed, time: Date.now() });
     sendClientMessage({ type: "USER_MESSAGE", content: trimmed });
@@ -199,4 +218,13 @@ export function useAgentConsole(): AgentConsoleController {
     setReplay,
     fetchSubmissionLog
   };
+}
+
+function findToolSegment(state: ConsoleState, callId: string): ToolSegment | null {
+  for (const turn of state.turns) {
+    for (const segment of turn.segments) {
+      if (segment.kind === "tool" && segment.callId === callId) return segment;
+    }
+  }
+  return null;
 }
