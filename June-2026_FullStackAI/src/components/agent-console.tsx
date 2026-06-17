@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useAgentConsole } from "@/hooks/use-agent-console";
-import type { ChatSegment, StreamIntegrity } from "@/core/console-state";
-import { shortJson } from "@/core/format";
+import type { ChatSegment, FlightEvent, StreamIntegrity } from "@/core/console-state";
+import { formatTime, shortJson } from "@/core/format";
 
 const PROMPTS = [
   "hello",
@@ -102,15 +102,7 @@ export function AgentConsole() {
         <aside className="side-stack">
           <section className="panel">
             <PanelHeading title="Trace Timeline" detail={`${state.flightEvents.length} recorded events.`} />
-            <div className="event-list">
-              {state.flightEvents.slice(-8).map((event) => (
-                <div key={event.id} className="event-row">
-                  <span>{event.direction}</span>
-                  <strong>{event.type}</strong>
-                  <em>{event.label}</em>
-                </div>
-              ))}
-            </div>
+            <FlightEventList events={state.flightEvents.slice(-8)} />
           </section>
           <section className="panel">
             <PanelHeading title="Context Inspector" detail={`${Object.keys(state.contexts).length} context streams.`} />
@@ -131,6 +123,33 @@ export function AgentConsole() {
         </section>
       </section>
     </main>
+  );
+}
+
+function FlightEventList({ events }: Readonly<{ events: readonly FlightEvent[] }>) {
+  if (events.length === 0) {
+    return (
+      <div className="empty-panel">
+        <strong>No protocol events yet.</strong>
+        <span>Open the backend and send a prompt to start recording.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="event-list">
+      {events.map((event) => (
+        <details key={event.id} className="event-row">
+          <summary>
+            <span className={`direction-pill ${event.direction}`}>{event.direction}</span>
+            <strong>{event.type}</strong>
+            <time>{formatTime(event.time)}</time>
+            <em>{event.label}</em>
+          </summary>
+          <pre>{shortJson(event.payload, 900)}</pre>
+        </details>
+      ))}
+    </div>
   );
 }
 
