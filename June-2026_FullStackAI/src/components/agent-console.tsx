@@ -61,14 +61,13 @@ export function AgentConsole() {
         <div className="metric-strip" aria-label="Protocol metrics">
           <Metric label="state" value={state.protocol.connection} />
           <Metric label="last seq" value={String(state.protocol.lastSeq)} />
-          <Metric label="buffer" value={String(state.protocol.bufferedEvents)} />
-          <Metric
-            label="ack/pong"
-            value={[
-              state.protocol.latestAckLatencyMs === null ? "-" : `${state.protocol.latestAckLatencyMs}ms`,
-              state.protocol.latestPongLatencyMs === null ? "-" : `${state.protocol.latestPongLatencyMs}ms`
-            ].join(" / ")}
-          />
+          <Metric label="next seq" value={String(state.protocol.expectedSeq)} />
+          <Metric label="buffer" value={String(state.protocol.bufferedEvents)} tone={state.protocol.bufferedEvents > 0 ? "warn" : "normal"} />
+          <Metric label="dupes" value={String(state.protocol.duplicateCount)} />
+          <Metric label="gaps" value={String(state.protocol.gapCount)} tone={state.protocol.gapCount > 0 ? "warn" : "normal"} />
+          <Metric label="reconnects" value={String(state.protocol.reconnectAttempts)} />
+          <Metric label="ack" value={state.protocol.latestAckLatencyMs === null ? "-" : `${state.protocol.latestAckLatencyMs}ms`} />
+          <Metric label="pong" value={state.protocol.latestPongLatencyMs === null ? "-" : `${state.protocol.latestPongLatencyMs}ms`} />
         </div>
       </header>
 
@@ -352,9 +351,13 @@ function ChatSegmentView({
   return <div className="stream-end">stream ended at seq {segment.seq}</div>;
 }
 
-function Metric({ label, value }: Readonly<{ label: string; value: string }>) {
+function Metric({
+  label,
+  value,
+  tone = "normal"
+}: Readonly<{ label: string; value: string; tone?: "normal" | "warn" }>) {
   return (
-    <div className="metric-tile">
+    <div className={`metric-tile ${tone}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>

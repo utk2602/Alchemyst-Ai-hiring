@@ -132,6 +132,10 @@ Added a lazy JSON tree backed by the same virtual-list primitive as the timeline
 
 Added a scrubber for each context stream so reviewers can step through snapshots and inspect the diff at each point. This makes context changes a first-class timeline instead of only showing the latest payload.
 
+### 27. feat(obs): add protocol health bar
+
+Expanded the command bar into a protocol health surface. It now exposes sequence progress, buffer pressure, duplicates, gaps, reconnect attempts, and ACK/PONG latency without requiring the trace panel to be open.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
