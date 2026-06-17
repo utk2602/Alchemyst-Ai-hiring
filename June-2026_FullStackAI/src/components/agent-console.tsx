@@ -5,6 +5,7 @@ import { useAgentConsole } from "@/hooks/use-agent-console";
 import type { ChatSegment, StreamIntegrity } from "@/core/console-state";
 import { formatTime, shortJson } from "@/core/format";
 import { buildTraceRows, type TraceRow } from "@/core/trace";
+import { VirtualList } from "./virtual-list";
 
 const PROMPTS = [
   "hello",
@@ -131,7 +132,7 @@ export function AgentConsole() {
           <section className="panel">
             <PanelHeading title="Trace Timeline" detail={`${traceRows.length} timeline rows.`} />
             <TraceRowList
-              rows={traceRows.slice(-8)}
+              rows={traceRows}
               selectedId={state.selectedTraceId}
               onSelect={(row) => selectTrace(row.id, row.chatElementId ?? null)}
             />
@@ -173,9 +174,15 @@ function TraceRowList({
   }
 
   return (
-    <div className="event-list">
-      {rows.map((row) => (
-        <details key={row.id} className={`event-row ${selectedId === row.id ? "selected" : ""}`}>
+    <VirtualList
+      items={rows}
+      rowHeight={112}
+      height={372}
+      className="event-list virtualized"
+      stickToBottom
+      getKey={(row) => row.id}
+      renderItem={(row) => (
+        <details className={`event-row ${selectedId === row.id ? "selected" : ""}`}>
           <summary onClick={() => onSelect(row)}>
             <span className={`direction-pill ${row.direction}`}>{row.direction}</span>
             <strong>{row.type}</strong>
@@ -184,8 +191,8 @@ function TraceRowList({
           </summary>
           <pre>{row.kind === "token_group" ? row.text : shortJson(row.payload, 900)}</pre>
         </details>
-      ))}
-    </div>
+      )}
+    />
   );
 }
 

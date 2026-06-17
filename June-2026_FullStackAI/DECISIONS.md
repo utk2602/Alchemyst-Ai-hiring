@@ -108,6 +108,10 @@ Added a derived trace-row model that groups consecutive token events by stream. 
 
 Added IDs that connect trace rows back to chat segments and tool cards. The link is bidirectional so the timeline can be used as a debugger, not just a passive log.
 
+### 21. perf(trace): virtualize trace timeline
+
+Added a small local virtual list instead of pulling in a large UI dependency. The timeline now renders a bounded window of rows while still auto-following live events.
+
 ## Ordering And Deduping Rationale
 
 Server events are processed only when their `seq` matches the expected next value. Future events wait in a `Map<number, ServerMessage>`, already-processed or already-buffered sequence numbers are ignored, and a new user message resets the processor because the backend resets `seq` and history for each turn.
